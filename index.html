@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicine Order Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .loading.active {
+            display: block;
+        }
+        /* Distinct colors for each supplier */
+        .supplier-ABC {
+            background-color: #ffecec;
+            border: 2px solid #ff9999;
+        }
+        .supplier-XYZ {
+            background-color: #ecffec;
+            border: 2px solid #99ff99;
+        }
+        .supplier-PQR {
+            background-color: #ecf2ff;
+            border: 2px solid #99b3ff;
+        }
+        .supplier-section {
+            margin-bottom: 3rem;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="loading">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#38571a]"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-[#38571a] mb-2">Medicine Order Management</h1>
+            <p class="text-gray-600">Your Health is Our Concern</p>
+        </header>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="flex justify-end space-x-4 mb-6">
+                <button class="bg-[#38571a] hover:bg-green-800 text-white px-4 py-2 rounded">Orders</button>
+                <button class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded">History</button>
+            </div>
+
+            <form id="medicineOrderForm" class="mb-8">
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Medicine Name</label>
+                        <input type="text" id="medicineName" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#38571a]" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                        <input type="number" id="quantity" min="1" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#38571a]" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Supplier</label>
+                        <select id="supplier" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#38571a]" required>
+                            <option value="">Select Supplier</option>
+                            <option value="ABC" style="background-color: #ffd6d6">ABC</option>
+                            <option value="XYZ" style="background-color: #d6ffd6">XYZ</option>
+                            <option value="PQR" style="background-color: #d6e6ff">PQR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="bg-[#38571a] hover:bg-green-800 text-white px-6 py-2 rounded">Add Order</button>
+                </div>
+            </form>
+
+            <div>
+                <h2 class="text-xl font-semibold mb-4">Current Orders</h2>
+                <div id="supplierSections" class="space-y-4">
+                    <div id="ABC-section" class="supplier-section supplier-ABC rounded-lg"></div>
+                    <div id="XYZ-section" class="supplier-section supplier-XYZ rounded-lg"></div>
+                    <div id="PQR-section" class="supplier-section supplier-PQR rounded-lg"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('medicineOrderForm');
+            
+            const loading = document.querySelector('.loading');
+
+            // Initialize orders array from localStorage or empty array
+            let orders = JSON.parse(localStorage.getItem('medicineOrders')) || [];
+            
+            // Display existing orders
+            displayOrders();
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const medicineName = document.getElementById('medicineName').value;
+                const quantity = document.getElementById('quantity').value;
+                const supplier = document.getElementById('supplier').value;
+
+                // Show loading
+                loading.classList.add('active');
+
+                try {
+                    // Simulate API call
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    // Add new order
+                    const newOrder = {
+                        id: Date.now(),
+                        medicineName,
+                        quantity,
+                        supplier
+                    };
+
+                    orders.push(newOrder);
+                    
+                    // Save to localStorage
+                    localStorage.setItem('medicineOrders', JSON.stringify(orders));
+                    
+                    // Reset form
+                    form.reset();
+                    
+                    // Refresh display
+                    displayOrders();
+                } catch (error) {
+                    console.error('Error adding order:', error);
+                    alert('Failed to add order. Please try again.');
+                } finally {
+                    // Hide loading
+                    loading.classList.remove('active');
+                }
+            });
+
+            function displayOrders() {
+                // Clear all supplier sections
+                document.getElementById('ABC-section').innerHTML = '';
+                document.getElementById('XYZ-section').innerHTML = '';
+                document.getElementById('PQR-section').innerHTML = '';
+
+                // Group orders by supplier
+                const groupedOrders = {
+                    ABC: orders.filter(order => order.supplier === 'ABC'),
+                    XYZ: orders.filter(order => order.supplier === 'XYZ'),
+                    PQR: orders.filter(order => order.supplier === 'PQR')
+                };
+
+                // Display orders for each supplier
+                Object.entries(groupedOrders).forEach(([supplier, supplierOrders]) => {
+                    if (supplierOrders.length === 0) return;
+
+                    const section = document.getElementById(`${supplier}-section`);
+                    section.innerHTML = `
+                        <h3 class="text-lg font-semibold mb-3">${supplier} Supplier Orders</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medicine</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${supplierOrders.map(order => `
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">${order.medicineName}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">${order.quantity}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <button onclick="editOrder(${order.id})" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button onclick="deleteOrder(${order.id})" class="text-red-600 hover:text-red-900">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+            }
+
+            // Make these functions global
+            window.editOrder = function(id) {
+                const order = orders.find(o => o.id === id);
+                if (order) {
+                    document.getElementById('medicineName').value = order.medicineName;
+                    document.getElementById('quantity').value = order.quantity;
+                    document.getElementById('supplier').value = order.supplier;
+                    
+                    // Remove the old order
+                    orders = orders.filter(o => o.id !== id);
+                    localStorage.setItem('medicineOrders', JSON.stringify(orders));
+                    displayOrders();
+                }
+            };
+
+            window.deleteOrder = function(id) {
+                if (confirm('Are you sure you want to delete this order?')) {
+                    orders = orders.filter(o => o.id !== id);
+                    localStorage.setItem('medicineOrders', JSON.stringify(orders));
+                    displayOrders();
+                }
+            };
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
